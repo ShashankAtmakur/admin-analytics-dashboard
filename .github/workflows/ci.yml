@@ -17,6 +17,8 @@ jobs:
           node-version: 20
       - name: Install
         run: npm ci
+      - name: Test
+        run: npm test --silent
       - name: Build
         run: npm run build
       - name: Lint
