@@ -12,12 +12,16 @@ export async function connect() {
     await mongoose.connect(uri, { dbName: process.env.MONGODB_DB || undefined, serverSelectionTimeoutMS: 5000 })
     return mongoose
   } catch (err) {
-    // log and fallback to seed mode by returning null
-    // callers should handle a null return value and use seed data
-    // but we avoid throwing here to prevent unhandled Mongoose buffering errors
-    // which surface as serialization/runtime issues in Next dev
+    // In production, fail fast and surface the error so deployments don't proceed
+    const message = (err as any)?.message || String(err)
+    if (process.env.NODE_ENV === 'production') {
+      // eslint-disable-next-line no-console
+      console.error('MongoDB connection failed (production) - aborting startup:', message)
+      throw err
+    }
+    // In non-production (dev), log and fall back to seeded data for convenience
     // eslint-disable-next-line no-console
-    console.error('MongoDB connection failed, falling back to seed data:', (err as any)?.message || String(err))
+    console.error('MongoDB connection failed, falling back to seed data:', message)
     return null
   }
 }

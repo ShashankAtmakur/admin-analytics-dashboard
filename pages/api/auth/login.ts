@@ -25,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const ok = await bcrypt.compare(password, user.passwordHash)
       if (ok && user.role === 'admin') {
         const token = jwt.sign({ role: 'admin', email }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '8h' })
-        res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${8 * 3600}`)
+        const secure = process.env.NODE_ENV === 'production' ? '; Secure; SameSite=Lax' : '; SameSite=Lax'
+        res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${8 * 3600}${secure}`)
         return res.json({ ok: true })
       }
     }
@@ -35,7 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // fallback demo
   if (email === DEMO.email && password === DEMO.password) {
     const token = jwt.sign({ role: 'admin', email }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '8h' })
-    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${8 * 3600}`)
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure; SameSite=Lax' : '; SameSite=Lax'
+    res.setHeader('Set-Cookie', `token=${token}; HttpOnly; Path=/; Max-Age=${8 * 3600}${secure}`)
     return res.json({ ok: true })
   }
 

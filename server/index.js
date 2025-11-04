@@ -145,14 +145,14 @@ async function createServer() {
         const ok = await bcrypt.compare(password, user.passwordHash || '')
         if (!ok) return res.status(401).json({ error: 'invalid_credentials' })
         const token = jwt.sign({ id: String(user._id), role: user.role || 'admin', email: user.email }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' })
-        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' })
+        res.cookie('token', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' })
         return res.json({ ok: true })
       }
 
       // Fallback: simple demo credentials from env
       if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
         const token = require('jsonwebtoken').sign({ id: 'demo', role: 'admin', email }, process.env.JWT_SECRET || 'devsecret', { expiresIn: '7d' })
-        res.cookie('token', token, { httpOnly: true, sameSite: 'lax' })
+        res.cookie('token', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' })
         return res.json({ ok: true })
       }
 
@@ -186,11 +186,23 @@ async function createServer() {
     req.on('close', () => clearInterval(interval))
   })
 
-  const port = process.env.PORT || 4000
-  app.listen(port, () => console.log(`Express fallback server listening on http://localhost:${port}`))
+  return app
 }
 
-createServer().catch((err) => {
-  console.error('Failed to start express fallback server', err)
-  process.exit(1)
-})
+// If run directly, start listening. When required (e.g. by tests), callers can
+// import createServer and start/inspect the app without it auto-listening.
+if (require.main === module) {
+  createServer()
+    .then((app) => {
+      const port = process.env.PORT || 4000
+      app.listen(port, () => console.log(`Express fallback server listening on http://localhost:${port}`))
+    })
+    .catch((err) => {
+      console.error('Failed to start express fallback server', err)
+      process.exit(1)
+    })
+}
+
+// CommonJS export for testability
+module.exports = { createServer }
+module.exports.default = createServer

@@ -89,3 +89,42 @@ Troubleshooting & notes
 - If the app cannot reach MongoDB during dev, the project falls back to seeded data so you can still run the UI.
 
 If you'd like, I can now create the GitHub repository under your provided URL and push the commit. After that I'll share the exact Vercel steps I used.
+
+## Tests and local verification
+
+This repo includes a small automated test suite (Jest + ts-jest). Tests exercise the analytics helper and the Express fallback server.
+
+Run tests locally:
+
+```pwsh
+cd 'd:\AariyaTech\project'
+npm install
+npm test
+```
+
+Notes:
+- The Express fallback exports a testable `createServer()` function in `server/index.js`. Tests start the app on an ephemeral port and close it when finished.
+
+## Quick note about deploying to Vercel
+
+- Vercel runs Next.js projects natively. The Express fallback is only intended for local/demo use and should not be used as the primary production API on Vercel. Instead, rely on Next.js API routes (they are deployed automatically by Vercel).
+- Environment variables required on Vercel (set these in Project Settings -> Environment Variables):
+   - `MONGODB_URI` (optional) — MongoDB connection string if you want persistent data
+   - `JWT_SECRET` — a long random string used to sign JWTs
+   - `ADMIN_EMAIL`, `ADMIN_PASSWORD` — optional demo fallback credentials (only used when DB is not connected)
+
+Deployment steps (summary):
+
+1. Push your repo to GitHub (this project already contains a remote entry if you set one up earlier):
+
+```pwsh
+cd 'd:\AariyaTech\project'
+git add -A
+git commit -m "chore(docs): add tests and Vercel deployment notes"
+git push origin master
+```
+
+2. In Vercel, import the GitHub repository and set the environment variables listed above.
+3. Vercel will run `npm run build` and deploy your site. If you need server-like routes, implement them as Next.js API routes (they work on Vercel). The Express fallback is useful for local testing only.
+
+If you want, I can commit and push these README updates for you now (I will run `git add/commit/push`).
